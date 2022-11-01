@@ -1,4 +1,4 @@
-name: Local runner test
+name: Self-Hosted-workflow
 
 on:
   workflow_dispatch:
