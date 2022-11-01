@@ -1,0 +1,12 @@
+name: Local runner test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  testRunner:
+    runs-on: [self-hosted]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Display Azure-CLI Version
+        run: az --version
