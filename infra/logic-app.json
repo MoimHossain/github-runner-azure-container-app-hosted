@@ -1,0 +1,239 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Grab_Form_Data": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "rawFormData",
+                            "type": "string",
+                            "value": "@{triggerBody()?['$formdata']}"
+                        }
+                    ]
+                },
+                "runAfter": {},
+                "type": "InitializeVariable"
+            },
+            "Parse_JSON": {
+                "inputs": {
+                    "content": "@variables('rawFormData')",
+                    "schema": {
+                        "items": {
+                            "properties": {
+                                "key": {
+                                    "type": "string"
+                                },
+                                "value": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "key",
+                                "value"
+                            ],
+                            "type": "object"
+                        },
+                        "type": "array"
+                    }
+                },
+                "runAfter": {
+                    "Grab_Form_Data": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ParseJson"
+            },
+            "Parse_Payload": {
+                "inputs": {
+                    "content": "@variables('PayloadString')",
+                    "schema": {
+                        "properties": {
+                            "action": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "runAfter": {
+                    "Raw_Payload": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ParseJson"
+            },
+            "Raw_Payload": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "PayloadString",
+                            "type": "string",
+                            "value": "@body('parse_JSON')[1].value"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Parse_JSON": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Read_Action": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "TargetAction",
+                            "type": "string",
+                            "value": "@body('Parse_Payload')?['action']"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Parse_Payload": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Switch": {
+                "cases": {
+                    "Case": {
+                        "actions": {
+                            "Put_a_message_on_a_queue_(V2)": {
+                                "inputs": {
+                                    "body": "@body('Parse_Payload')?['action']",
+                                    "host": {
+                                        "connection": {
+                                            "name": "@parameters('$connections')['azurequeues']['connectionId']"
+                                        }
+                                    },
+                                    "method": "post",
+                                    "path": "/v2/storageAccounts/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/queues/@{encodeURIComponent('ghrunnerqueue')}/messages"
+                                },
+                                "runAfter": {},
+                                "type": "ApiConnection"
+                            }
+                        },
+                        "case": "queued"
+                    },
+                    "Case_2": {
+                        "actions": {
+                            "For_each": {
+                                "actions": {
+                                    "Delete_message_(V2)": {
+                                        "inputs": {
+                                            "host": {
+                                                "connection": {
+                                                    "name": "@parameters('$connections')['azurequeues']['connectionId']"
+                                                }
+                                            },
+                                            "method": "delete",
+                                            "path": "/v2/storageAccounts/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/queues/@{encodeURIComponent('ghrunnerqueue')}/messages/@{encodeURIComponent(items('For_each')?['MessageId'])}",
+                                            "queries": {
+                                                "popreceipt": "@items('For_each')?['PopReceipt']"
+                                            }
+                                        },
+                                        "runAfter": {},
+                                        "type": "ApiConnection"
+                                    }
+                                },
+                                "foreach": "@body('Get_messages_(V2)')?['QueueMessagesList']?['QueueMessage']",
+                                "runAfter": {
+                                    "Get_messages_(V2)": [
+                                        "Succeeded"
+                                    ]
+                                },
+                                "type": "Foreach"
+                            },
+                            "Get_messages_(V2)": {
+                                "inputs": {
+                                    "host": {
+                                        "connection": {
+                                            "name": "@parameters('$connections')['azurequeues']['connectionId']"
+                                        }
+                                    },
+                                    "method": "get",
+                                    "path": "/v2/storageAccounts/@{encodeURIComponent(encodeURIComponent('AccountNameFromSettings'))}/queues/@{encodeURIComponent('ghrunnerqueue')}/messages",
+                                    "queries": {
+                                        "numofmessages": "1"
+                                    }
+                                },
+                                "runAfter": {},
+                                "type": "ApiConnection"
+                            }
+                        },
+                        "case": "completed"
+                    }
+                },
+                "default": {
+                    "actions": {}
+                },
+                "expression": "@variables('TargetAction')",
+                "runAfter": {
+                    "Read_Action": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Switch"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "Object"
+            }
+        },
+        "triggers": {
+            "manual": {
+                "inputs": {
+                    "schema": {
+                        "properties": {
+                            "$content": {
+                                "type": "string"
+                            },
+                            "$content-type": {
+                                "type": "string"
+                            },
+                            "$formdata": {
+                                "items": {
+                                    "properties": {
+                                        "key": {
+                                            "type": "string"
+                                        },
+                                        "value": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "key",
+                                        "value"
+                                    ],
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "kind": "Http",
+                "type": "Request"
+            }
+        }
+    },
+    "parameters": {
+        "$connections": {
+            "value": {
+                "azurequeues": {
+                    "connectionId": "/subscriptions/YOUR_SUBSCRIPTION_ID/resourceGroups/xeniel/providers/Microsoft.Web/connections/azurequeues-5",
+                    "connectionName": "azurequeues-5",
+                    "id": "/subscriptions/YOUR_SUBSCRIPTION_ID/providers/Microsoft.Web/locations/westeurope/managedApis/azurequeues"
+                }
+            }
+        }
+    }
+}
