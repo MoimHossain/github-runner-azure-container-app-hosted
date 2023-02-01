@@ -1,0 +1,25 @@
+
+
+###
+POST https://api.github.com/repos/MoimHossain/vanilla-net7-app-asev3-demo/actions/runners/registration-token
+Accept: application/vnd.github.v3+json
+Authorization: token 
+X-GitHub-Api-Version: 2022-11-28
+
+
+
+###
+GET https://api.github.com/repos/MoimHossain/azure-ad-b2c-user-creation/actions/secrets
+Accept: application/vnd.github.v3+json
+Authorization: token 
+X-GitHub-Api-Version: 2022-11-28
+
+
+
+###
+GET https://api.github.com/repos/MoimHossain/azure-ad-b2c-user-creation/forks
+Accept: application/vnd.github.v3+json
+Authorization: token 
+X-GitHub-Api-Version: 2022-11-28
+
+

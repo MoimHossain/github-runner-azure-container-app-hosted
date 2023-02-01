@@ -1,7 +1,8 @@
 
 
 ```
-docker build --build-arg RUNNER_VERSION=2.298.2 --tag moimhossain/ghrunner:beta .
+docker build --build-arg RUNNER_VERSION=2.301.1 --tag moimhossain/ghrunner:beta .
+
 ```
 
 ```
