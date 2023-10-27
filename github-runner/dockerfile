@@ -19,7 +19,7 @@ RUN cd /home/docker && mkdir actions-runner && cd actions-runner \
 
 RUN chown -R docker ~docker && /home/docker/actions-runner/bin/installdependencies.sh
 
-ADD spin.sh spin.sh
+ADD spinv1.sh spin.sh
 RUN chmod +x spin.sh
 # set the user to "docker" so all subsequent commands are run as the docker user
 USER docker
